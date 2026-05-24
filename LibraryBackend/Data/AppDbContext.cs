@@ -7,7 +7,7 @@ namespace LibraryBackend.Data
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
-        // Цей рядок створює таблицю "Books" у нашій базі даних
+        //створення "Books" у базі даних
         public DbSet<Book> Books { get; set; }
     }
 }
