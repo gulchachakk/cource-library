@@ -1,41 +1,47 @@
+using LibraryBackend.Data;
+using LibraryBackend.Models;
+using Microsoft.EntityFrameworkCore;
+
 var builder = WebApplication.CreateBuilder(args);
 
-// Add services to the container.
-// Learn more about configuring OpenAPI at https://aka.ms/aspnet/openapi
-builder.Services.AddOpenApi();
+//підключ бази даних
+builder.Services.AddDbContext<AppDbContext>(options =>
+    options.UseSqlite("Data Source=library.db"));
 
 var app = builder.Build();
 
-// Configure the HTTP request pipeline.
-if (app.Environment.IsDevelopment())
+//API
+//всі книги GET
+//сервер іде в базу, бере список книг і віддає його.
+app.MapGet("/books", async (AppDbContext db) =>
 {
-    app.MapOpenApi();
-}
+    return await db.Books.ToListAsync();
+});
 
-app.UseHttpsRedirection();
-
-var summaries = new[]
+//додавання книги POST
+//сервер зберігає дані нової книги в базу.
+app.MapPost("/books", async (Book newBook, AppDbContext db) =>
 {
-    "Freezing", "Bracing", "Chilly", "Cool", "Mild", "Warm", "Balmy", "Hot", "Sweltering", "Scorching"
-};
+    db.Books.Add(newBook); //додати книгу
+    await db.SaveChangesAsync(); //збереження змін у файл
+    return Results.Ok(newBook); //все пройшло успішно
+});
 
-app.MapGet("/weatherforecast", () =>
+//видалення книги DELETE
+// {id} - конкретний номер книги, "/books/1"
+app.MapDelete("/books/{id}", async (int id, AppDbContext db) =>
 {
-    var forecast =  Enumerable.Range(1, 5).Select(index =>
-        new WeatherForecast
-        (
-            DateOnly.FromDateTime(DateTime.Now.AddDays(index)),
-            Random.Shared.Next(-20, 55),
-            summaries[Random.Shared.Next(summaries.Length)]
-        ))
-        .ToArray();
-    return forecast;
-})
-.WithName("GetWeatherForecast");
+    //шукаємо книгу в базі за її номером
+    var book = await db.Books.FindAsync(id);
+    
+    //якщо книги немає - помилка "Не знайдено"
+    if (book == null) return Results.NotFound("Книгу не знайдено.");
+
+    //якщо знайшли - видаляємо з бази
+    db.Books.Remove(book);
+    await db.SaveChangesAsync(); //зберігаємо зміни у файл
+    
+    return Results.Ok("Книгу успішно видалено.");
+});
 
 app.Run();
-
-record WeatherForecast(DateOnly Date, int TemperatureC, string? Summary)
-{
-    public int TemperatureF => 32 + (int)(TemperatureC / 0.5556);
-}
