@@ -7,7 +7,13 @@ namespace LibraryBackend.Data
     {
         public AppDbContext(DbContextOptions<AppDbContext> options) : base(options) { }
 
-        //створення "Books" у базі даних
+        //табл книг
         public DbSet<Book> Books { get; set; }
+
+        //табл читачів
+        public DbSet<Reader> Readers { get; set; }
+
+        //табл журналу видачі
+        public DbSet<Loan> Loans { get; set; }
     }
 }

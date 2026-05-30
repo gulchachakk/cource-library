@@ -44,4 +44,45 @@ app.MapDelete("/books/{id}", async (int id, AppDbContext db) =>
     return Results.Ok("Книгу успішно видалено.");
 });
 
+//функц для читачів
+//отримати список усіх читачів GET
+app.MapGet("/readers", async (AppDbContext db) =>
+{
+    return await db.Readers.ToListAsync();
+});
+
+//реєстрація нового читача POST
+app.MapPost("/readers", async (Reader newReader, AppDbContext db) =>
+{
+    db.Readers.Add(newReader);
+    await db.SaveChangesAsync(); //збереж в базу
+    return Results.Ok(newReader);
+});
+
+//журнал видачі
+//видає книгу читачу POST
+app.MapPost("/loans", async (Loan newLoan, AppDbContext db) =>
+{
+    //запис про видачу
+    db.Loans.Add(newLoan);
+    await db.SaveChangesAsync();
+    return Results.Ok(newLoan);
+});
+
+//поверн книги PUT
+//шукається запис за id і ставиться дата повернення
+app.MapPut("/loans/{id}/return", async (int id, AppDbContext db) =>
+{
+    var loan = await db.Loans.FindAsync(id);
+    
+    if (loan == null) return Results.NotFound("Запис про видачу не знайдено.");
+    if (loan.ReturnDate != null) return Results.BadRequest("Цю книгу вже було повернуто раніше.");
+
+    //поточний час як дата повернення
+    loan.ReturnDate = DateTime.UtcNow; 
+    await db.SaveChangesAsync();
+    
+    return Results.Ok("Книгу успішно повернуто в бібліотеку.");
+});
+
 app.Run();
