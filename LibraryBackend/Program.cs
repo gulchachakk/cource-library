@@ -3,12 +3,20 @@ using LibraryBackend.Models;
 using Microsoft.EntityFrameworkCore;
 
 var builder = WebApplication.CreateBuilder(args);
+builder.Services.AddCors(options =>
+{
+    options.AddDefaultPolicy(policy =>
+    {
+        policy.AllowAnyOrigin().AllowAnyMethod().AllowAnyHeader();
+    });
+}); //доступ з одного порту в інший
 
 //підключ бази даних
 builder.Services.AddDbContext<AppDbContext>(options =>
     options.UseSqlite("Data Source=library.db"));
 
 var app = builder.Build();
+app.UseCors();
 
 //API
 //всі книги GET
@@ -60,6 +68,12 @@ app.MapPost("/readers", async (Reader newReader, AppDbContext db) =>
 });
 
 //журнал видачі
+//список усіх видач GET
+app.MapGet("/loans", async (AppDbContext db) =>
+{
+    return await db.Loans.ToListAsync();
+});
+
 //видає книгу читачу POST
 app.MapPost("/loans", async (Loan newLoan, AppDbContext db) =>
 {
